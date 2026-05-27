@@ -1,11 +1,11 @@
 # Phân tích yêu cầu — vai Provider
 
-- Cặp đàm phán:
-- Product: A / B
-- Provider service:
-- Consumer service:
-- Người viết:
-- Ngày:
+- Cặp đàm phán: Pair 04
+- Product: A
+- Provider service: Notification (A7)
+- Consumer service: Core Business (A6)
+- Người viết: Nguyễn Ngọc Lý
+- Ngày: 27/05/2026
 
 ---
 
@@ -13,8 +13,8 @@
 
 | Resource | Mô tả | Thuộc tính bắt buộc | Thuộc tính tùy chọn |
 |---|---|---|---|
-| `<Resource 1>` |  |  |  |
-| `<Resource 2>` |  |  |  |
+| Notification | Thông tin cảnh báo cần gửi | notificationId, title, message, channel, severity | metadata |
+| Delivery Status | Trạng thái gửi cảnh báo | notificationId, status, timestamp | retryCount, deliveredAt |
 
 ---
 
@@ -22,8 +22,8 @@
 
 | Method | Path | Mục đích | Consumer gọi khi nào? |
 |---|---|---|---|
-| POST | `/...` |  |  |
-| GET | `/.../{id}` |  |  |
+| POST | `/notifications` | Tạo và gửi notification mới | Khi hệ thống phát hiện alert |
+| GET | `/notifications/{id}` | Lấy trạng thái notification | Khi cần kiểm tra kết quả gửi |
 
 ---
 
@@ -46,17 +46,17 @@ Tối thiểu 5 case.
 
 Ghi rõ những điểm user story chưa nói nhưng Provider cần giả định.
 
-- Giả định 1:
-- Giả định 2:
-- Giả định 3:
+- Giả định 1: Notification service hoạt động trong mạng nội bộ.
+- Giả định 2: Notification ID phải duy nhất.
+- Giả định 3: Hệ thống hỗ trợ nhiều channel như email, sms, push.
 
 ---
 
 ## 5. Câu hỏi cho Consumer
 
-1. 
-2. 
-3. 
+1. Có cần retry tự động khi gửi thất bại không?
+2. Consumer có yêu cầu priority cho notification không?
+3. Có cần hỗ trợ gửi nhiều channel cùng lúc không?
 
 ---
 
@@ -66,3 +66,6 @@ Ghi rõ những điểm user story chưa nói nhưng Provider cần giả địn
 |---|---|---|
 | Tên field không thống nhất | Consumer parse lỗi | Chốt naming trong `openapi.yaml` |
 | Payload lớn | Timeout/mock lỗi | Thống nhất content-type và size limit |
+| Duplicate request | Gửi trùng notification | Dùng idempotency key |
+| Consumer gửi sai channel | Notification fail | Validate enum channel |
+| Provider thay đổi response schema | Consumer lỗi parse | Version API rõ ràng |

@@ -1,11 +1,11 @@
 # Phân tích yêu cầu — vai Consumer
 
-- Cặp đàm phán:
-- Product: A / B
-- Consumer service:
-- Provider service:
-- Người viết:
-- Ngày:
+- Cặp đàm phán: Pair 04
+- Product: A
+- Consumer service: Core Business (A6)
+- Provider service: Notification (A7)
+- Người viết: Nguyễn Ngọc Lý
+- Ngày: 27/05/2026
 
 ---
 
@@ -13,8 +13,8 @@
 
 | Resource | Consumer dùng để làm gì? | Field bắt buộc với Consumer | Field có thể tùy chọn |
 |---|---|---|---|
-| `<Resource 1>` |  |  |  |
-| `<Resource 2>` |  |  |  |
+| `Alert Notification` | Gửi cảnh báo đến Notification service | alertId, title, channel, severity | metadata |
+| `Delivery Status` | Theo dõi trạng thái gửi cảnh báo | notificationId, status, timestamp | retryCount |
 
 ---
 
@@ -22,8 +22,8 @@
 
 | Method | Path | Lúc nào gọi? | Kỳ vọng response |
 |---|---|---|---|
-| POST | `/...` |  |  |
-| GET | `/.../{id}` |  |  |
+| POST | `/notifications` | khi có cảnh báo cần gửi | 202 Accepted |
+| GET | `/notifications/{id}` | khi cần kiểm tra trạng thái gửi | 200 OK |
 
 ---
 
@@ -44,17 +44,17 @@ Tối thiểu 5 case.
 
 ## 4. Giả định bổ sung
 
-- Giả định 1:
-- Giả định 2:
-- Giả định 3:
+- Giả định 1: Notification service luôn khả dụng nội bộ.
+- Giả định 2: Message phải có severity hợp lệ.
+- Giả định 3: Notification ID là duy nhất.
 
 ---
 
 ## 5. Câu hỏi cho Provider
 
-1. 
-2. 
-3. 
+1. Notification có hỗ trợ retry tự động không?
+2. Có giới hạn số lượng request mỗi phút không?
+3. Có hỗ trợ nhiều channel cùng lúc không?
 
 ---
 
@@ -62,5 +62,9 @@ Tối thiểu 5 case.
 
 | Rủi ro | Tác động | Đề xuất xử lý |
 |---|---|---|
+| Provider đổi schema | Consumer parse lỗi | Version API rõ ràng |
+| Notification gửi chậm | Mất realtime | Timeout + retry |
+| Thiếu trạng thái delivery | Khó tracking | Chuẩn hóa response |
+| Duplicate event | Gửi trùng cảnh báo | Dùng idempotency key |
 | Provider đổi kiểu dữ liệu | Consumer parse lỗi | Chốt type/format/pattern |
 | Provider thiếu mã lỗi | Consumer khó xử lý lỗi | Chuẩn hóa Problem Details |
