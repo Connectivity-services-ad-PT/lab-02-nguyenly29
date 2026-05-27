@@ -13,11 +13,11 @@ evidence/buoi-02/
   tool-versions.txt
   git-log.txt
   mock-screenshots/
-    req-01-*.png
-    req-02-*.png
-    req-03-*.png
-    req-04-*.png
-    req-05-*.png
+    req-01.png
+    req-02.png
+    req-03.png
+    req-04.png
+    req-05.png
 ```
 
 ## Cách sinh report Spectral
