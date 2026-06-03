@@ -4,43 +4,51 @@ info:
   title: Smart Campus Notification Service API
   version: 1.0.0
   description: |
-    OpenAPI contract for Notification Service (A7).
-    Service dùng để gửi notification và cảnh báo trong Smart Campus.
+    Multi-channel notification service for Smart Campus.
+    This service handles asynchronous and direct notifications
+    through Email, SMS and Push Notification channels.
+
   contact:
-    name: FIT4110 Teaching Team
-    email: fit4110@example.edu.vn
+    name: Group A7
+    email: a7-smartcampus@example.edu.vn
 
 servers:
   - url: http://localhost:4010
     description: Prism mock server
 
   - url: https://api.campus.local
-    description: Class network placeholder
+    description: Production placeholder
 
 tags:
   - name: health
-    description: Health check endpoints
+    description: Health check operations
+
+  - name: templates
+    description: Notification template management
 
   - name: notifications
-    description: Notification management endpoints
+    description: Direct notification sending
+
+  - name: history
+    description: Notification history management
 
 security:
   - bearerAuth: []
 
 paths:
+
   /health:
     get:
       operationId: getHealth
-      summary: Kiểm tra trạng thái service
-      description: Endpoint kiểm tra service còn hoạt động.
-      tags:
-        - health
-
+      summary: Health check
+      description: Check notification service status.
+      tags: [health]
       security: []
 
       responses:
         '200':
-          description: Service đang hoạt động
+          description: Service is healthy
+
           content:
             application/json:
               schema:
@@ -51,15 +59,107 @@ paths:
                   value:
                     status: ok
                     service: notification-service
-                    time: '2026-05-10T08:00:00Z'
+                    time: '2026-05-27T10:00:00Z'
 
-  /notifications:
+  /api/v1/templates:
+    get:
+      operationId: getTemplates
+      summary: Get notification templates
+      tags: [templates]
+      description: Retrieve all notification templates in the system
+      responses:
+        '200':
+          description: Template list
+
+          content:
+            application/json:
+              schema:
+                type: array
+
+                items:
+                  $ref: '#/components/schemas/NotificationTemplate'
+
     post:
-      operationId: createNotification
-      summary: Tạo notification mới
-      description: Endpoint nhận request tạo notification từ Core Business.
-      tags:
-        - notifications
+      operationId: createTemplate
+      summary: Create notification template
+      tags: [templates]
+      description: Create a new notification template in the system
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationTemplate'
+
+      responses:
+        '201':
+          description: Template created
+
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/history:
+    get:
+      operationId: getNotificationHistory
+      summary: Get notification history
+      tags: [history]
+      description: Retrieve notification history of all users
+      responses:
+        '200':
+          description: Notification history list
+
+          content:
+            application/json:
+              schema:
+                type: array
+
+                items:
+                  $ref: '#/components/schemas/NotificationHistory'
+
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/history/{notificationId}:
+    get:
+      operationId: getNotificationById
+      summary: Get notification details
+      tags: [history]
+      description: Retrieve detailed information of a specific notification by ID
+      parameters:
+        - $ref: '#/components/parameters/NotificationId'
+
+      responses:
+        '200':
+          description: Notification details
+
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationHistory'
+
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/direct-send:
+    post:
+      operationId: directSendNotification
+      summary: Send notification directly
+
+      description: |
+        Internal emergency API for sending notification directly
+        without using message queue.
+
+      tags: [notifications]
 
       requestBody:
         required: true
@@ -67,45 +167,23 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateAlertRequest'
+              $ref: '#/components/schemas/DirectSendRequest'
 
             examples:
-              unauthorizedAccess:
+              emailNotification:
                 value:
-                  sourceService: core-business
-                  alertType: UNAUTHORIZED_ACCESS
-                  severity: HIGH
-                  message: Phát hiện truy cập trái phép tại cổng chính
-                  relatedEventId: 0196fb3d-4ad7-7d1e-9f49-5d5148d2babc
+                  userId: USER-001
+                  title: Emergency Alert
+                  message: Fire detected in Building A
+                  attachmentUrl: "null"
+
+                  channel:
+                    channelType: email
+                    email: student@campus.edu.vn
 
       responses:
-        '201':
-          description: Notification đã được tạo
-
-          headers:
-            Location:
-              description: URI của notification vừa tạo.
-              schema:
-                type: string
-                format: uri
-
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Alert'
-
-              examples:
-                created:
-                  value:
-                    id: 0196fb3d-4ad7-7d1e-9f49-5d5148d2babc
-                    sourceService: core-business
-                    alertType: UNAUTHORIZED_ACCESS
-                    severity: HIGH
-                    message: Phát hiện truy cập trái phép tại cổng chính
-                    relatedEventId: 0196fb3d-4ad7-7d1e-9f49-5d5148d2babc
-                    status: OPEN
-                    createdAt: '2026-05-10T08:00:00Z'
-                    resolvedAt: null
+        '200':
+          description: Notification sent successfully
 
         '400':
           $ref: '#/components/responses/BadRequest'
@@ -119,135 +197,8 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-    get:
-      operationId: listNotifications
-      summary: Lấy danh sách notification
-      description: Lấy danh sách notification với cursor pagination.
-      tags:
-        - notifications
-
-      parameters:
-        - $ref: '#/components/parameters/Cursor'
-        - $ref: '#/components/parameters/Limit'
-
-      responses:
-        '200':
-          description: Danh sách notification
-
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AlertPage'
-
-              examples:
-                firstPage:
-                  value:
-                    items:
-                      - id: 0196fb3d-4ad7-7d1e-9f49-5d5148d2babc
-                        sourceService: core-business
-                        alertType: UNAUTHORIZED_ACCESS
-                        severity: HIGH
-                        message: Phát hiện truy cập trái phép tại cổng chính
-                        relatedEventId: 0196fb3d-4ad7-7d1e-9f49-5d5148d2babc
-                        status: OPEN
-                        createdAt: '2026-05-10T08:00:00Z'
-                        resolvedAt: null
-
-                    nextCursor: null
-                    hasMore: false
-
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /notifications/recent:
-    get:
-      operationId: getRecentNotifications
-      summary: Lấy notification gần đây
-      description: Lấy các notification gần nhất.
-      tags:
-        - notifications
-
-      parameters:
-        - name: limit
-          in: query
-          required: false
-          description: Số notification tối đa cần lấy.
-
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-
-      responses:
-        '200':
-          description: Danh sách notification gần đây
-
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: false
-
-                required:
-                  - items
-
-                properties:
-                  items:
-                    type: array
-                    minItems: 0
-                    maxItems: 100
-
-                    items:
-                      $ref: '#/components/schemas/Alert'
-
-              examples:
-                recentNotifications:
-                  value:
-                    items: []
-
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-        '403':
-          $ref: '#/components/responses/Forbidden'
-
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /notifications/{notificationId}:
-    get:
-      operationId: getNotificationById
-      summary: Lấy chi tiết notification
-      description: Lấy chi tiết notification theo UUID.
-      tags:
-        - notifications
-
-      parameters:
-        - $ref: '#/components/parameters/NotificationId'
-
-      responses:
-        '200':
-          description: Chi tiết notification
-
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Alert'
-
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
 components:
+
   securitySchemes:
     bearerAuth:
       type: http
@@ -259,40 +210,16 @@ components:
       name: notificationId
       in: path
       required: true
-      description: UUID của notification.
 
       schema:
         type: string
         format: uuid
 
-    Cursor:
-      name: cursor
-      in: query
-      required: false
-      description: Cursor dùng để lấy trang tiếp theo.
-
-      schema:
-        type:
-          - string
-          - 'null'
-        minLength: 1
-        maxLength: 200
-
-    Limit:
-      name: limit
-      in: query
-      required: false
-      description: Số item tối đa mỗi trang.
-
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 100
-        default: 20
-
   schemas:
+
     HealthStatus:
       type: object
+
       additionalProperties: false
 
       required:
@@ -303,155 +230,151 @@ components:
       properties:
         status:
           type: string
-          enum:
-            - ok
-          description: Trạng thái service.
-          example: ok
+          enum: ['ok']
 
         service:
           type: string
-          minLength: 2
-          maxLength: 80
-          description: Tên service.
-          example: notification-service
 
         time:
           type: string
           format: date-time
-          description: Thời điểm kiểm tra.
-          example: '2026-05-10T08:00:00Z'
 
-    CreateAlertRequest:
+    NotificationTemplate:
       type: object
-      additionalProperties: false
 
       required:
-        - sourceService
-        - alertType
-        - severity
-        - message
+        - templateName
+        - channelType
+        - content
 
       properties:
-        sourceService:
+        templateId:
           type: string
-          minLength: 2
-          maxLength: 80
-          pattern: '^[a-z0-9-]+$'
-          description: Service tạo notification.
-          example: core-business
+          format: uuid
 
-        alertType:
+        templateName:
           type: string
-          enum:
-            - UNAUTHORIZED_ACCESS
-            - SENSOR_THRESHOLD_EXCEEDED
-            - UNKNOWN_PERSON
-            - SYSTEM_ERROR
-          description: Loại cảnh báo.
-          example: UNAUTHORIZED_ACCESS
 
-        severity:
-          $ref: '#/components/schemas/AlertSeverity'
+        channelType:
+          type: string
+          enum: ['email', 'sms', 'push']
+
+        content:
+          type: string
+
+    DirectSendRequest:
+      type: object
+
+      required:
+        - userId
+        - title
+        - message
+        - channel
+
+      properties:
+        userId:
+          type: string
+
+        title:
+          type: string
 
         message:
           type: string
-          minLength: 5
-          maxLength: 500
-          description: Nội dung notification.
-          example: Phát hiện truy cập trái phép tại cổng chính
 
-        relatedEventId:
-          type:
-            - string
-            - 'null'
-          format: uuid
-          description: Event liên quan.
-          example: 0196fb3d-4ad7-7d1e-9f49-5d5148d2babc
+        attachmentUrl:
+          type: [string, "null"]
 
-    Alert:
-      allOf:
-        - $ref: '#/components/schemas/CreateAlertRequest'
+        channel:
+          $ref: '#/components/schemas/NotificationChannel'
 
-        - type: object
-          additionalProperties: false
+    NotificationChannel:
+      oneOf:
+        - $ref: '#/components/schemas/EmailChannel'
+        - $ref: '#/components/schemas/SMSChannel'
+        - $ref: '#/components/schemas/PushChannel'
 
-          required:
-            - id
-            - status
-            - createdAt
-            - resolvedAt
+      discriminator:
+        propertyName: channelType
 
-          properties:
-            id:
-              type: string
-              format: uuid
-              description: UUID của notification.
+        mapping:
+          email: '#/components/schemas/EmailChannel'
+          sms: '#/components/schemas/SMSChannel'
+          push: '#/components/schemas/PushChannel'
 
-            status:
-              type: string
-              enum:
-                - OPEN
-                - ACKNOWLEDGED
-                - RESOLVED
-              description: Trạng thái notification.
-              example: OPEN
-
-            createdAt:
-              type: string
-              format: date-time
-              description: Thời điểm tạo notification.
-              example: '2026-05-10T08:00:00Z'
-
-            resolvedAt:
-              type:
-                - string
-                - 'null'
-              format: date-time
-              description: Thời điểm xử lý xong.
-              example: null
-
-    AlertSeverity:
-      type: string
-      enum:
-        - LOW
-        - MEDIUM
-        - HIGH
-        - CRITICAL
-      description: Mức độ nghiêm trọng của notification.
-      example: HIGH
-
-    AlertPage:
+    EmailChannel:
       type: object
-      additionalProperties: false
 
       required:
-        - items
-        - nextCursor
-        - hasMore
+        - channelType
+        - email
 
       properties:
-        items:
-          type: array
-          minItems: 0
-          maxItems: 100
+        channelType:
+          type: string
+          enum: ['email']
 
-          items:
-            $ref: '#/components/schemas/Alert'
+        email:
+          type: string
+          format: email
 
-        nextCursor:
-          type:
-            - string
-            - 'null'
-          description: Cursor trang tiếp theo.
-          example: null
+    SMSChannel:
+      type: object
 
-        hasMore:
-          type: boolean
-          description: Còn dữ liệu hay không.
-          example: false
+      required:
+        - channelType
+        - phoneNumber
+
+      properties:
+        channelType:
+          type: string
+          enum: ['sms']
+
+        phoneNumber:
+          type: string
+
+    PushChannel:
+      type: object
+
+      required:
+        - channelType
+        - deviceToken
+
+      properties:
+        channelType:
+          type: string
+          enum: ['push']
+
+        deviceToken:
+          type: string
+
+    NotificationHistory:
+      type: object
+
+      required:
+        - notificationId
+        - status
+        - createdAt
+
+      properties:
+        notificationId:
+          type: string
+          format: uuid
+
+        status:
+          type: string
+          enum: ['PENDING', 'SUCCESS', 'FAILED']
+
+        createdAt:
+          type: string
+          format: date-time
+
+        deliveredAt:
+          type: [string, "null"]
+          format: date-time
 
     Problem:
       type: object
+
       additionalProperties: false
 
       required:
@@ -463,64 +386,22 @@ components:
         type:
           type: string
           format: uri
-          example: https://campus.local/errors/validation
 
         title:
           type: string
-          minLength: 3
-          maxLength: 120
-          example: Dữ liệu không hợp lệ
 
         status:
           type: integer
-          minimum: 400
-          maximum: 599
-          example: 400
 
         detail:
-          type:
-            - string
-            - 'null'
-          maxLength: 500
-          example: Payload không đúng JSON Schema
+          type: [string, "null"]
 
         instance:
-          type:
-            - string
-            - 'null'
-          format: uri
-          example: /notifications
-
-        errors:
-          type: array
-          minItems: 0
-          maxItems: 50
-
-          items:
-            type: object
-            additionalProperties: false
-
-            required:
-              - field
-              - code
-              - message
-
-            properties:
-              field:
-                type: string
-                example: alertType
-
-              code:
-                type: string
-                example: ENUM_MISMATCH
-
-              message:
-                type: string
-                example: alertType không nằm trong danh sách cho phép
-
+          type: [string, "null"]
   responses:
+
     BadRequest:
-      description: Dữ liệu sai định dạng
+      description: Invalid request data
 
       content:
         application/problem+json:
@@ -528,15 +409,7 @@ components:
             $ref: '#/components/schemas/Problem'
 
     Unauthorized:
-      description: Thiếu hoặc sai xác thực
-
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-
-    Forbidden:
-      description: Không đủ quyền
+      description: Authentication required
 
       content:
         application/problem+json:
@@ -544,15 +417,7 @@ components:
             $ref: '#/components/schemas/Problem'
 
     NotFound:
-      description: Resource không tồn tại
-
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
-
-    Conflict:
-      description: Xung đột nghiệp vụ
+      description: Resource not found
 
       content:
         application/problem+json:
@@ -560,7 +425,7 @@ components:
             $ref: '#/components/schemas/Problem'
 
     UnprocessableEntity:
-      description: Vi phạm rule nghiệp vụ
+      description: Business validation failed
 
       content:
         application/problem+json:
@@ -568,7 +433,7 @@ components:
             $ref: '#/components/schemas/Problem'
 
     InternalServerError:
-      description: Lỗi server nội bộ
+      description: Internal server error
 
       content:
         application/problem+json:
