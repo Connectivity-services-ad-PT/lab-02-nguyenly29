@@ -1,10 +1,10 @@
 # Phân tích yêu cầu — vai Provider
 
 - Cặp đàm phán: Pair 04
-- Product: A
+- Product: A7
 - Provider service: Notification (A7)
 - Consumer service: Core Business (A6)
-- Người viết: Nguyễn Ngọc Lý
+- Người viết: Nguyễn Thanh Danh
 - Ngày: 27/05/2026
 
 ---
