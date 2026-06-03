@@ -272,11 +272,11 @@ components:
       description: Cursor dùng để lấy trang tiếp theo.
 
       schema:
-        anyOf:
-          - type: string
-            minLength: 1
-            maxLength: 200
-          - type: 'null'
+        type:
+          - string
+          - 'null'
+        minLength: 1
+        maxLength: 200
 
     Limit:
       name: limit
@@ -302,9 +302,9 @@ components:
 
       properties:
         status:
+          type: string
           enum:
             - ok
-          type: string
           description: Trạng thái service.
           example: ok
 
@@ -341,12 +341,12 @@ components:
           example: core-business
 
         alertType:
+          type: string
           enum:
             - UNAUTHORIZED_ACCESS
             - SENSOR_THRESHOLD_EXCEEDED
             - UNKNOWN_PERSON
             - SYSTEM_ERROR
-          type: string
           description: Loại cảnh báo.
           example: UNAUTHORIZED_ACCESS
 
@@ -361,10 +361,10 @@ components:
           example: Phát hiện truy cập trái phép tại cổng chính
 
         relatedEventId:
-          anyOf:
-            - type: string
-              format: uuid
-            - type: 'null'
+          type:
+            - string
+            - 'null'
+          format: uuid
           description: Event liên quan.
           example: 0196fb3d-4ad7-7d1e-9f49-5d5148d2babc
 
@@ -388,11 +388,11 @@ components:
               description: UUID của notification.
 
             status:
+              type: string
               enum:
                 - OPEN
                 - ACKNOWLEDGED
                 - RESOLVED
-              type: string
               description: Trạng thái notification.
               example: OPEN
 
@@ -403,20 +403,20 @@ components:
               example: '2026-05-10T08:00:00Z'
 
             resolvedAt:
-              anyOf:
-                - type: string
-                  format: date-time
-                - type: 'null'
+              type:
+                - string
+                - 'null'
+              format: date-time
               description: Thời điểm xử lý xong.
               example: null
 
     AlertSeverity:
+      type: string
       enum:
         - LOW
         - MEDIUM
         - HIGH
         - CRITICAL
-      type: string
       description: Mức độ nghiêm trọng của notification.
       example: HIGH
 
@@ -439,9 +439,9 @@ components:
             $ref: '#/components/schemas/Alert'
 
         nextCursor:
-          anyOf:
-            - type: string
-            - type: 'null'
+          type:
+            - string
+            - 'null'
           description: Cursor trang tiếp theo.
           example: null
 
@@ -478,17 +478,17 @@ components:
           example: 400
 
         detail:
-          anyOf:
-            - type: string
-              maxLength: 500
-            - type: 'null'
+          type:
+            - string
+            - 'null'
+          maxLength: 500
           example: Payload không đúng JSON Schema
 
         instance:
-          anyOf:
-            - type: string
-              format: uri
-            - type: 'null'
+          type:
+            - string
+            - 'null'
+          format: uri
           example: /notifications
 
         errors:
